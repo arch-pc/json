@@ -1,813 +1,822 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON Data Editor</title>
-    <style>
-        /* Standaardwaarden voor CSS variabelen */
-        :root {
-            --week-columns: 4; /* Aantal weekkolommen (dynamisch ingesteld door JS) */
-            --graph-col-width: 50px; /* NIEUW: Vaste breedte voor de Graph toggle */
-            --total-columns: 7; /* Totaal aantal kolommen (Naam + Weeks + Graph + Acties) */
-            --name-col-width: 200px; /* Vaste breedte voor de variabele naam */
-            --action-col-width: 80px; /* Vaste breedte voor de acties knoppen */
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Data Editor</title>
+    <style>
+        /* Standaardwaarden voor CSS variabelen */
+        :root {
+            --week-columns: 4; /* Aantal weekkolommen (dynamisch ingesteld door JS) */
+            --graph-col-width: 50px; /* NIEUW: Vaste breedte voor de Graph toggle */
+            --total-columns: 7; /* Totaal aantal kolommen (Naam + Weeks + Graph + Acties) */
+            --name-col-width: 200px; /* Vaste breedte voor de variabele naam */
+            --action-col-width: 80px; /* Vaste breedte voor de acties knoppen */
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f5f5f5;
-            padding: 25px; 
-        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 25px; 
+        }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 8px 8px 0 0;
-        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px 8px 0 0;
+        }
 
-        .header h1 {
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
+        .header h1 {
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
 
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
 
-        .controls {
-            padding: 20px 30px;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+        .controls {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
 
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
 
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
 
-        .btn-primary:hover {
-            background: #5568d3;
-        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
 
-        .btn-success {
-            background: #48bb78;
-            color: white;
-        }
-        
-        .btn-week-add {
-            background: #f6ad55;
-            color: white;
-        }
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .btn-week-add {
+            background: #f6ad55;
+            color: white;
+        }
 
-        .btn-success:hover {
-            background: #38a169;
-        }
+        .btn-success:hover {
+            background: #38a169;
+        }
 
-        .file-input {
-            display: none;
-        }
+        .file-input {
+            display: none;
+        }
 
-        .content {
-            padding: 30px;
-        }
+        .content {
+            padding: 30px;
+        }
 
-        .category {
-            margin-bottom: 30px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            overflow: hidden;
-        }
+        .category {
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
 
-        .category-header {
-            background: #f8f9fa;
-            padding: 12px 18px;
-            font-weight: 600;
-            font-size: 20px; 
-            color: #2d3748;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+        .category-header {
+            background: #f8f9fa;
+            padding: 12px 18px;
+            font-weight: 600;
+            font-size: 20px; 
+            color: #2d3748;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
 
-        .category-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+        .category-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
 
-        .icon-btn {
-            width: 25px; 
-            height: 25px; 
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px; 
-            transition: all 0.3s;
-            background: white;
-            border: 1px solid #ddd;
-        }
+        .icon-btn {
+            width: 25px; 
+            height: 25px; 
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px; 
+            transition: all 0.3s;
+            background: white;
+            border: 1px solid #ddd;
+        }
 
-        .icon-btn:hover {
-            transform: scale(1.1);
-        }
+        .icon-btn:hover {
+            transform: scale(1.1);
+        }
 
-        .btn-add {
-            color: #48bb78;
-            border-color: #48bb78;
-        }
+        .btn-add {
+            color: #48bb78;
+            border-color: #48bb78;
+        }
 
-        .btn-delete {
-            color: #f56565;
-            border-color: #f56565;
-        }
+        .btn-delete {
+            color: #f56565;
+            border-color: #f56565;
+        }
 
-        /* --- WEEK HEADER EN DATA GRID STYLES --- */
+        /* --- WEEK HEADER EN DATA GRID STYLES --- */
 
-        .week-header-row,
-        .variable-row {
-            /* NIEUWE GRID: Naam, Weeks, Graph, Acties */
-            grid-template-columns: var(--name-col-width) repeat(var(--week-columns), 1fr) var(--graph-col-width) var(--action-col-width);
-            display: grid;
-            gap: 5px; 
-            align-items: stretch; 
-            padding: 0; 
-        }
-        
-        .week-header-row {
-            background: #e9ecef;
-            font-weight: 600;
-            padding: 10px 0;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            color: #667eea;
-        }
-        
-        /* Cellen krijgen nu de verticale padding */
-        .name-cell, .input-with-delta, .action-cell, .week-header-cell, .graph-cell {
-            padding-top: 8px;
-            padding-bottom: 8px;
-        }
-        
-        .week-header-cell, .graph-header-cell {
-            text-align: center;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            font-size: 14px; /* Iets kleiner voor 'Graph' */
-        }
+        .week-header-row,
+        .variable-row {
+            /* NIEUWE GRID: Naam, Weeks, Graph, Acties */
+            grid-template-columns: var(--name-col-width) repeat(var(--week-columns), 1fr) var(--graph-col-width) var(--action-col-width);
+            display: grid;
+            gap: 5px; 
+            align-items: stretch; 
+            padding: 0; 
+        }
+        
+        .week-header-row {
+            background: #e9ecef;
+            font-weight: 600;
+            padding: 10px 0;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        
+        /* Cellen krijgen nu de verticale padding */
+        .name-cell, .input-with-delta, .action-cell, .week-header-cell, .graph-cell {
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+        
+        .week-header-cell, .graph-header-cell {
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 14px; /* Iets kleiner voor 'Graph' */
+        }
 
-        .week-header-row .name-cell {
-            padding-left: 15px;
-        }
+        .week-header-row .name-cell {
+            padding-left: 15px;
+        }
 
-        .week-header-row .action-cell {
-            text-align: center; 
-            padding-right: 5px;
-        }
-        
-        .variable-row {
-            border-bottom: 1px solid #f0f0f0;
-        }
+        .week-header-row .action-cell {
+            text-align: center; 
+            padding-right: 5px;
+        }
+        
+        .variable-row {
+            border-bottom: 1px solid #f0f0f0;
+        }
 
-        .main-variable-row {
-            background: #fcfcfc;
-            border-left: 3px solid #667eea;
-            margin-bottom: 0; 
-        }
+        .main-variable-row {
+            background: #fcfcfc;
+            border-left: 3px solid #667eea;
+            margin-bottom: 0; 
+        }
 
-        /* OPLOSSING: Margin-left verwijderd om de kolommen uit te lijnen */
-        .sub-variable-row {
-            background: #ffffff;
-            border-left: 1px solid #ddd;
-        }
+        /* OPLOSSING: Margin-left verwijderd om de kolommen uit te lijnen */
+        .sub-variable-row {
+            background: #ffffff;
+            border-left: 1px solid #ddd;
+        }
 
-        /* Naam Cell (Kolom 1) */
-        .name-cell {
-            font-weight: 600;
-            padding-left: 10px; /* Base padding */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            cursor: pointer;
-            font-size: 15px; 
-        }
-        
-        /* OPLOSSING: Padding verhoogd om de visuele indent te creëren binnen de uitgelijnde kolom */
-        .sub-variable-row .name-cell {
-            font-weight: 500;
-            color: #4a5568;
-            padding-left: 30px; /* Dit creëert de indent */
-            font-size: 14px; 
-        }
-        
-        .name-cell:focus {
-            outline: 1px dashed #667eea;
-        }
+        /* Naam Cell (Kolom 1) */
+        .name-cell {
+            font-weight: 600;
+            padding-left: 10px; /* Base padding */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            font-size: 15px; 
+        }
+        
+        /* OPLOSSING: Padding verhoogd om de visuele indent te creëren binnen de uitgelijnde kolom */
+        .sub-variable-row .name-cell {
+            font-weight: 500;
+            color: #4a5568;
+            padding-left: 30px; /* Dit creëert de indent */
+            font-size: 14px; 
+        }
+        
+        .name-cell:focus {
+            outline: 1px dashed #667eea;
+        }
 
 
-        /* Data Input Cell Styles */
-        .input-with-delta {
-            /* Horizontale opmaak voor input en delta */
-            display: flex;
-            flex-direction: row; 
-            gap: 3px; 
-            align-items: center; 
-            justify-content: center; /* Centreert de input + delta groep in de kolom */
-        }
+        /* Data Input Cell Styles */
+        .input-with-delta {
+            /* Horizontale opmaak voor input en delta */
+            display: flex;
+            flex-direction: row; 
+            gap: 3px; 
+            align-items: center; 
+            justify-content: center; /* Centreert de input + delta groep in de kolom */
+        }
 
-        .data-input {
-            padding: 3px 5px; 
-            border: 1px solid #cbd5e0;
-            border-radius: 3px;
-            font-size: 15px; 
-            width: 100%;
-            max-width: 50px; 
-            min-height: 25px; 
-            text-align: center;
-            transition: all 0.1s ease;
-        }
-        
-        .delta-indicator {
-            font-size: 13px; 
-            font-weight: 500;
-            line-height: 1;
-            white-space: nowrap; 
-            min-width: 40px; 
-            text-align: left;
-        }
+        .data-input {
+            padding: 3px 5px; 
+            border: 1px solid #cbd5e0;
+            border-radius: 3px;
+            font-size: 15px; 
+            width: 100%;
+            max-width: 50px; 
+            min-height: 25px; 
+            text-align: center;
+            transition: all 0.1s ease;
+        }
+        
+        .delta-indicator {
+            font-size: 13px; 
+            font-weight: 500;
+            line-height: 1;
+            white-space: nowrap; 
+            min-width: 40px; 
+            text-align: left;
+        }
 
-        .delta-up { color: #48bb78; }
-        .delta-down { color: #f56565; }
-        .delta-none { color: #718096; }
-        
-        /* NIEUW: Graph Cell Stijl */
-        .graph-cell {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        .delta-up { color: #48bb78; }
+        .delta-down { color: #f56565; }
+        .delta-none { color: #718096; }
+        
+        /* NIEUW: Graph Cell Stijl */
+        .graph-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        /* Actie Knoppen Cell (Laatste Kolom) */
-        .action-cell {
-            display: flex;
-            gap: 3px;
-            justify-content: center; 
-        }
-        .variable-row .action-cell {
-            align-items: center;
-        }
+        /* Actie Knoppen Cell (Laatste Kolom) */
+        .action-cell {
+            display: flex;
+            gap: 3px;
+            justify-content: center; 
+        }
+        .variable-row .action-cell {
+            align-items: center;
+        }
 
-        /* --- Notitieveld Stijl --- */
-        .variable-notes {
-            grid-column: 1 / span var(--total-columns); 
-            padding: 5px 10px 10px 10px;
-            margin-bottom: 25px;
-            border-left: 3px solid #667eea; 
-            background: #fcfcfc;
-        }
-        .notes-input {
-            width: 100%;
-            padding: 8px; 
-            border: 1px solid #cbd5e0;
-            border-radius: 4px;
-            font-size: 14px; 
-            resize: vertical;
-            min-height: 60px; 
-        }
+        /* --- Notitieveld Stijl --- */
+        .variable-notes {
+            grid-column: 1 / span var(--total-columns); 
+            padding: 5px 10px 10px 10px;
+            margin-bottom: 25px;
+            border-left: 3px solid #667eea; 
+            background: #fcfcfc;
+        }
+        .notes-input {
+            width: 100%;
+            padding: 8px; 
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 14px; 
+            resize: vertical;
+            min-height: 60px; 
+        }
 
-        /* --- Media Queries --- */
-        @media (max-width: 992px) {
-            /* Moet de grid-template-columns hier aanpassen als je mobiele weergave wilt behouden */
-            /* Aangezien de oorspronkelijke code dit naar 1fr zette, behouden we dat */
-            .week-header-row,
-            .variable-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .variable-notes {
-                grid-column: 1; 
-            }
-            
-            .btn {
-                width: 100%;
-            }
-            .input-with-delta {
-                flex-direction: row; 
-                justify-content: space-between;
-                padding-left: 10px;
-                padding-right: 10px;
-            }
-            .data-input {
-                max-width: 100px; 
-            }
-            
-            /* Verberg de graph en acties cellen op mobiel (dit is een aanname) */
-            .graph-cell, .action-cell {
-                display: none;
-            }
-        }
-    </style>
+        /* --- Media Queries --- */
+        @media (max-width: 992px) {
+            /* Moet de grid-template-columns hier aanpassen als je mobiele weergave wilt behouden */
+            /* Aangezien de oorspronkelijke code dit naar 1fr zette, behouden we dat */
+            .week-header-row,
+            .variable-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .variable-notes {
+                grid-column: 1; 
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            .input-with-delta {
+                flex-direction: row; 
+                justify-content: space-between;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            .data-input {
+                max-width: 100px; 
+            }
+            
+            /* Verberg de graph en acties cellen op mobiel (dit is een aanname) */
+            .graph-cell, .action-cell {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📊 JSON Data Editor</h1>
-            <p>Laad, bekijk en bewerk je data eenvoudig</p>
-        </div>
+    <div class="container">
+        <div class="header">
+            <h1>📊 JSON Data Editor</h1>
+            <p>Laad, bekijk en bewerk je data eenvoudig</p>
+        </div>
 
-        <div class="controls">
-            <input type="file" id="fileInput" accept="application/json" class="file-input">
-            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">JSON Bestand Laden</button>
-            <button class="btn btn-success" onclick="saveJSON()">Opslaan (updated_data.json)</button>
-            <button class="btn btn-week-add" onclick="addWeek()">Week Toevoegen</button>
-        </div>
+        <div class="controls">
+            <input type="file" id="fileInput" accept="application/json" class="file-input">
+            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">JSON Bestand Laden</button>
+            <button class="btn btn-success" onclick="saveJSON()">Opslaan (updated_data.json)</button>
+            <button class="btn btn-week-add" onclick="addWeek()">Week Toevoegen</button>
+        </div>
 
-        <div class="content" id="content">
-            <div class="empty-state">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                <h3>Geen bestand geladen</h3>
-                <p>Klik op "JSON Bestand Laden" om te beginnen</p>
-            </div>
-        </div>
-    </div>
+        <div class="content" id="content">
+            <div class="empty-state">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3>Geen bestand geladen</h3>
+                <p>Klik op "JSON Bestand Laden" om te beginnen</p>
+            </div>
+        </div>
+    </div>
 
-    <script>
-        let jsonData = null;
-        let weeks = []; 
+    <script>
+        let jsonData = null;
+        let weeks = []; 
 
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    try {
-                        jsonData = JSON.parse(event.target.result);
-                        // Zorg ervoor dat alle variabelen een 'graph' eigenschap hebben na het laden
-                        Object.keys(jsonData).forEach(categoryKey => {
-                            jsonData[categoryKey].variables.forEach(variable => {
-                                if (variable.graph === undefined) {
-                                    variable.graph = false; // Standaardwaarde
-                                }
-                            });
-                        });
-                        renderData(); 
-                    } catch (error) {
-                        alert('Fout bij het laden van JSON: ' + error.message);
-                    }
-                };
-                reader.readAsText(file);
-            }
-        });
-        
-        function updateGraphToggle(categoryKey, varIndex, subIndex = null, isChecked) {
-            if (!jsonData) return;
-            
-            if (subIndex !== null) {
-                // Subvariabelen hebben geen 'graph' eigenschap volgens de JSON-structuur,
-                // maar we kunnen deze toevoegen indien gewenst. Ik voer het hier uit voor subvariabelen
-                jsonData[categoryKey].variables[varIndex].subVariables[subIndex].graph = isChecked;
-            } else {
-                jsonData[categoryKey].variables[varIndex].graph = isChecked;
-            }
-            // Huidige data hoeft niet opnieuw gerenderd te worden voor een simpele toggle
-            console.log(`Graph toggle for ${categoryKey}/${varIndex}/${subIndex} set to: ${isChecked}`);
-        }
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        jsonData = JSON.parse(event.target.result);
+                        // Zorg ervoor dat alle variabelen een 'graph' eigenschap hebben na het laden
+                        Object.keys(jsonData).forEach(categoryKey => {
+                            jsonData[categoryKey].variables.forEach(variable => {
+                                if (variable.graph === undefined) {
+                                    variable.graph = false; // Standaardwaarde
+                                }
+                            });
+                        });
+                        renderData(); 
+                    } catch (error) {
+                        alert('Fout bij het laden van JSON: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        function updateGraphToggle(categoryKey, varIndex, subIndex = null, isChecked) {
+            if (!jsonData) return;
+            
+            if (subIndex !== null) {
+                // Subvariabelen hebben geen 'graph' eigenschap volgens de JSON-structuur,
+                // maar we kunnen deze toevoegen indien gewenst. Ik voer het hier uit voor subvariabelen
+                jsonData[categoryKey].variables[varIndex].subVariables[subIndex].graph = isChecked;
+            } else {
+                jsonData[categoryKey].variables[varIndex].graph = isChecked;
+            }
+            // Huidige data hoeft niet opnieuw gerenderd te worden voor een simpele toggle
+            console.log(`Graph toggle for ${categoryKey}/${varIndex}/${subIndex} set to: ${isChecked}`);
+        }
 
-        function addWeek() {
-            if (!jsonData || Object.keys(jsonData).length === 0) {
-                alert('Laad eerst een JSON-bestand.');
-                return;
-            }
+        function addWeek() {
+            if (!jsonData || Object.keys(jsonData).length === 0) {
+                alert('Laad eerst een JSON-bestand.');
+                return;
+            }
 
-            const maxWeekNumber = weeks.length;
-            const newWeekName = `Week ${maxWeekNumber + 1}`;
+            const maxWeekNumber = weeks.length;
+            const newWeekName = `Week ${maxWeekNumber + 1}`;
 
-            Object.keys(jsonData).forEach(categoryKey => {
-                jsonData[categoryKey].variables.forEach(variable => {
-                    variable.data[newWeekName] = null; 
+            Object.keys(jsonData).forEach(categoryKey => {
+                jsonData[categoryKey].variables.forEach(variable => {
+                    variable.data[newWeekName] = null; 
 
-                    if (variable.subVariables) {
-                        variable.subVariables.forEach(subVar => {
-                            subVar.data[newWeekName] = null;
-                        });
-                    }
-                });
-            });
+                    if (variable.subVariables) {
+                        variable.subVariables.forEach(subVar => {
+                            subVar.data[newWeekName] = null;
+                        });
+                    }
+                });
+            });
 
-            renderData(); 
-        }
-
-
-        function updateName(categoryKey, varIndex, subIndex = null, newName) {
-            if (!jsonData || !newName) return;
-
-            if (subIndex !== null) {
-                jsonData[categoryKey].variables[varIndex].subVariables[subIndex].name = newName;
-            } else {
-                jsonData[categoryKey].variables[varIndex].name = newName;
-            }
-            renderData(); 
-        }
-
-        function calculateDelta(currentValue, previousValue) {
-            if (currentValue === null || previousValue === null || previousValue === undefined) {
-                return { html: '', className: 'delta-none' };
-            }
-
-            const delta = currentValue - previousValue;
-            // Rond af op hele getallen voor de delta
-            const roundedDelta = Math.round(delta); 
-
-            // Gebruik de gewenste opmaak met ▲ en ▼
-            const deltaDisplay = roundedDelta !== 0 
-                ? (roundedDelta > 0 ? `▲ +${Math.abs(roundedDelta)}` : `▼ ${roundedDelta}`) 
-                : '— 0'; 
-
-            const className = roundedDelta > 0 ? 'delta-up' : (roundedDelta < 0 ? 'delta-down' : 'delta-none');
-
-            return { html: deltaDisplay, className: className };
-        }
-
-        function renderData() {
-            const content = document.getElementById('content');
-            
-            // Bepaal de weken dynamisch en sorteer ze
-            weeks = [];
-            if (jsonData) {
-                 Object.keys(jsonData).forEach(categoryKey => {
-                     jsonData[categoryKey].variables.forEach(variable => {
-                         // Check of 'graph' bestaat, anders toevoegen
-                         if (variable.graph === undefined) variable.graph = false;
-                         if (Object.keys(variable.data).length > weeks.length) {
-                             weeks = Object.keys(variable.data).sort((a, b) => {
-                                const numA = parseInt(a.replace('Week ', ''));
-                                const numB = parseInt(b.replace('Week ', ''));
-                                return numA - numB;
-                             });
-                         }
-                     });
-                 });
-            }
-            
-            content.innerHTML = '';
-
-            if (!jsonData || Object.keys(jsonData).length === 0) {
-                content.innerHTML = `
-                    <div class="empty-state">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <h3>Geen bestand geladen</h3>
-                        <p>Klik op "JSON Bestand Laden" om te beginnen</p>
-                    </div>
-                `;
-                return;
-            }
-
-            // Pas de CSS Grid aan via JavaScript om het aantal kolommen te matchen
-            const columns = weeks.length;
-            document.documentElement.style.setProperty('--week-columns', columns);
-            document.documentElement.style.setProperty('--total-columns', columns + 3); // Naam + Weeks + Graph + Acties
+            renderData(); 
+        }
 
 
-            Object.keys(jsonData).forEach(categoryKey => {
-                const category = jsonData[categoryKey];
-                const categoryDiv = document.createElement('div');
-                categoryDiv.className = 'category';
-                
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'category-content';
+        function updateName(categoryKey, varIndex, subIndex = null, newName) {
+            if (!jsonData || !newName) return;
 
-                // 1. CATEGORY HEADER
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'category-header';
-                headerDiv.innerHTML = `
-                    <span>${categoryKey}</span>
-                    <div class="category-actions">
-                        <button class="icon-btn btn-add" onclick="event.stopPropagation(); addVariable('${categoryKey}')" title="Variabele toevoegen">+</button>
-                    </div>
-                `;
-                categoryDiv.appendChild(headerDiv);
-                
-                // 2. WEEK HEADER ROW
-                const weekHeaderRow = document.createElement('div');
-                weekHeaderRow.className = 'week-header-row';
-                // Eerste kolom (naam)
-                weekHeaderRow.innerHTML = `<div class="name-cell">Variabele/Subvariabele</div>`; 
-                weeks.forEach(week => {
-                    weekHeaderRow.innerHTML += `<div class="week-header-cell">${week}</div>`;
-                });
-                // NIEUW: Graph kolom
-                weekHeaderRow.innerHTML += `<div class="week-header-cell graph-header-cell">📈</div>`;
-                // Laatste kolom 'Acties'
-                weekHeaderRow.innerHTML += `<div class="action-cell">Acties</div>`; 
-                contentDiv.appendChild(weekHeaderRow);
+            if (subIndex !== null) {
+                jsonData[categoryKey].variables[varIndex].subVariables[subIndex].name = newName;
+            } else {
+                jsonData[categoryKey].variables[varIndex].name = newName;
+            }
+            renderData(); 
+        }
+
+        function calculateDelta(currentValue, previousValue) {
+            if (currentValue === null || previousValue === null || previousValue === undefined) {
+                return { html: '', className: 'delta-none' };
+            }
+
+            const delta = currentValue - previousValue;
+            // Rond af op hele getallen voor de delta
+            const roundedDelta = Math.round(delta); 
+
+            // Gebruik de gewenste opmaak met ▲ en ▼
+            const deltaDisplay = roundedDelta !== 0 
+                ? (roundedDelta > 0 ? `▲ +${Math.abs(roundedDelta)}` : `▼ ${roundedDelta}`) 
+                : '— 0'; 
+
+            const className = roundedDelta > 0 ? 'delta-up' : (roundedDelta < 0 ? 'delta-down' : 'delta-none');
+
+            return { html: deltaDisplay, className: className };
+        }
+
+        function renderData() {
+            const content = document.getElementById('content');
+            
+            // Bepaal de weken dynamisch en sorteer ze
+            weeks = [];
+            if (jsonData) {
+                 Object.keys(jsonData).forEach(categoryKey => {
+                     jsonData[categoryKey].variables.forEach(variable => {
+                         // Check of 'graph' bestaat, anders toevoegen
+                         if (variable.graph === undefined) variable.graph = false;
+                         if (Object.keys(variable.data).length > weeks.length) {
+                             weeks = Object.keys(variable.data).sort((a, b) => {
+                                 const numA = parseInt(a.replace('Week ', ''));
+                                 const numB = parseInt(b.replace('Week ', ''));
+                                 return numA - numB;
+                             });
+                         }
+                     });
+                 });
+            }
+            
+            content.innerHTML = '';
+
+            if (!jsonData || Object.keys(jsonData).length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3>Geen bestand geladen</h3>
+                        <p>Klik op "JSON Bestand Laden" om te beginnen</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Pas de CSS Grid aan via JavaScript om het aantal kolommen te matchen
+            const columns = weeks.length;
+            document.documentElement.style.setProperty('--week-columns', columns);
+            document.documentElement.style.setProperty('--total-columns', columns + 3); // Naam + Weeks + Graph + Acties
 
 
-                category.variables.forEach((variable, varIndex) => {
-                    if (variable.notes === undefined) {
-                        variable.notes = "";
-                    }
-                    // Zorg ervoor dat 'graph' bestaat
-                    if (variable.graph === undefined) {
-                        variable.graph = false;
-                    }
-                    
-                    // 3. HOOFD VARIABELE RIJ
-                    const varDiv = document.createElement('div');
-                    varDiv.className = 'variable-row main-variable-row';
-                    
-                    // Naam Cell (Kolom 1)
-                    const nameCell = document.createElement('span');
-                    nameCell.className = 'name-cell';
-                    nameCell.setAttribute('contenteditable', 'true');
-                    nameCell.onblur = function() { updateName(categoryKey, varIndex, null, this.textContent); };
-                    nameCell.textContent = variable.name;
-                    varDiv.appendChild(nameCell);
-                    
-                    // Data Inputs (Kolommen 2 tot N+1)
-                    weeks.forEach((week, i) => {
-                        const inputContainer = document.createElement('div');
-                        inputContainer.className = 'input-with-delta';
+            Object.keys(jsonData).forEach(categoryKey => {
+                const category = jsonData[categoryKey];
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'category-content';
 
-                        const input = document.createElement('input');
-                        input.type = 'text'; 
-                        input.className = 'data-input';
-                        input.placeholder = '0';
-                        input.value = variable.data[week] !== null ? variable.data[week] : ''; 
-                        
-                        const deltaDiv = document.createElement('div');
-                        
-                        // Delta indicator
-                        if (i > 0) {
-                            const previousWeek = weeks[i - 1];
-                            const delta = calculateDelta(
-                                variable.data[week], 
-                                variable.data[previousWeek]
-                            );
-                            deltaDiv.className = `delta-indicator ${delta.className}`;
-                            deltaDiv.innerHTML = delta.html;
-                        } else {
-                            // Week 1 heeft geen delta
-                            deltaDiv.className = 'delta-indicator delta-none';
-                            deltaDiv.innerHTML = ''; 
-                        }
+                // 1. CATEGORY HEADER
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'category-header';
+                headerDiv.innerHTML = `
+                    <span>${categoryKey}</span>
+                    <div class="category-actions">
+                        <button class="icon-btn btn-add" onclick="event.stopPropagation(); addVariable('${categoryKey}')" title="Variabele toevoegen">+</button>
+                    </div>
+                `;
+                categoryDiv.appendChild(headerDiv);
+                
+                // 2. WEEK HEADER ROW
+                const weekHeaderRow = document.createElement('div');
+                weekHeaderRow.className = 'week-header-row';
+                // Eerste kolom (naam)
+                weekHeaderRow.innerHTML = `<div class="name-cell">Variabele/Subvariabele</div>`; 
+                weeks.forEach(week => {
+                    weekHeaderRow.innerHTML += `<div class="week-header-cell">${week}</div>`;
+                });
+                // NIEUW: Graph kolom
+                weekHeaderRow.innerHTML += `<div class="week-header-cell graph-header-cell">📈</div>`;
+                // Laatste kolom 'Acties'
+                weekHeaderRow.innerHTML += `<div class="action-cell">Acties</div>`; 
+                contentDiv.appendChild(weekHeaderRow);
 
-                        input.onchange = function() {
-                            const value = this.value === '' ? null : parseFloat(this.value);
-                            jsonData[categoryKey].variables[varIndex].data[week] = value;
-                            renderData(); 
-                        };
-                        
-                        inputContainer.appendChild(input);
-                        inputContainer.appendChild(deltaDiv);
-                        varDiv.appendChild(inputContainer);
-                    });
-                    
-                    // NIEUW: Graph Cell (Tussen Weeks en Acties)
-                    const graphDiv = document.createElement('div');
-                    graphDiv.className = 'graph-cell';
-                    const graphCheckbox = document.createElement('input');
-                    graphCheckbox.type = 'checkbox';
-                    graphCheckbox.checked = variable.graph;
-                    graphCheckbox.onchange = function() {
-                        updateGraphToggle(categoryKey, varIndex, null, this.checked);
-                    };
-                    graphDiv.appendChild(graphCheckbox);
-                    varDiv.appendChild(graphDiv);
 
-                    // Actie Knoppen (Laatste Kolom)
-                    const actionsDiv = document.createElement('div');
-                    actionsDiv.className = 'variable-actions action-cell';
-                    actionsDiv.innerHTML = `
-                        <button class="icon-btn btn-add" onclick="addSubVariable('${categoryKey}', ${varIndex})" title="Subvariabele toevoegen">+</button>
-                        <button class="icon-btn btn-delete" onclick="deleteVariable('${categoryKey}', ${varIndex})" title="Variabele verwijderen">×</button>
-                    `;
-                    varDiv.appendChild(actionsDiv);
-                    
-                    contentDiv.appendChild(varDiv);
-                    
+                category.variables.forEach((variable, varIndex) => {
+                    if (variable.notes === undefined) {
+                        variable.notes = "";
+                    }
+                    // Zorg ervoor dat 'graph' bestaat
+                    if (variable.graph === undefined) {
+                        variable.graph = false;
+                    }
+                    
+                    // 3. HOOFD VARIABELE RIJ
+                    const varDiv = document.createElement('div');
+                    varDiv.className = 'variable-row main-variable-row';
+                    
+                    // Naam Cell (Kolom 1)
+                    const nameCell = document.createElement('span');
+                    nameCell.className = 'name-cell';
+                    nameCell.setAttribute('contenteditable', 'true');
+                    nameCell.onblur = function() { updateName(categoryKey, varIndex, null, this.textContent); };
+                    
+                    // ======================================================
+                    // **OPLOSSING 1 HIER:** Verwijder witruimte van de naam
+                    // ======================================================
+                    nameCell.textContent = variable.name.trim();
+                    varDiv.appendChild(nameCell);
+                    
+                    // Data Inputs (Kolommen 2 tot N+1)
+                    weeks.forEach((week, i) => {
+                        const inputContainer = document.createElement('div');
+                        inputContainer.className = 'input-with-delta';
 
-                    // 4. SUBVARIABLE RIJEN
-                    if (variable.subVariables && variable.subVariables.length > 0) {
-                        variable.subVariables.forEach((subVar, subIndex) => {
-                            // Zorg ervoor dat 'graph' bestaat op subvariabelen
-                            if (subVar.graph === undefined) subVar.graph = false;
-                            
-                            const subDiv = document.createElement('div');
-                            subDiv.className = 'variable-row sub-variable-row';
+                        const input = document.createElement('input');
+                        input.type = 'text'; 
+                        input.className = 'data-input';
+                        input.placeholder = '0';
+                        input.value = variable.data[week] !== null ? variable.data[week] : ''; 
+                        
+                        const deltaDiv = document.createElement('div');
+                        
+                        // Delta indicator
+                        if (i > 0) {
+                            const previousWeek = weeks[i - 1];
+                            const delta = calculateDelta(
+                                variable.data[week], 
+                                variable.data[previousWeek]
+                            );
+                            deltaDiv.className = `delta-indicator ${delta.className}`;
+                            deltaDiv.innerHTML = delta.html;
+                        } else {
+                            // Week 1 heeft geen delta
+                            deltaDiv.className = 'delta-indicator delta-none';
+                            deltaDiv.innerHTML = ''; 
+                        }
 
-                            // Naam Cell (Kolom 1)
-                            const subNameCell = document.createElement('span');
-                            subNameCell.className = 'name-cell sub-name-cell';
-                            subNameCell.setAttribute('contenteditable', 'true');
-                            subNameCell.textContent = subVar.name;
-                            subNameCell.onblur = function() { updateName(categoryKey, varIndex, subIndex, this.textContent); };
-                            subDiv.appendChild(subNameCell);
+                        input.onchange = function() {
+                            const value = this.value === '' ? null : parseFloat(this.value);
+                            jsonData[categoryKey].variables[varIndex].data[week] = value;
+                            renderData(); 
+                        };
+                        
+                        inputContainer.appendChild(input);
+                        inputContainer.appendChild(deltaDiv);
+                        varDiv.appendChild(inputContainer);
+                    });
+                    
+                    // NIEUW: Graph Cell (Tussen Weeks en Acties)
+                    const graphDiv = document.createElement('div');
+                    graphDiv.className = 'graph-cell';
+                    const graphCheckbox = document.createElement('input');
+                    graphCheckbox.type = 'checkbox';
+                    graphCheckbox.checked = variable.graph;
+                    graphCheckbox.onchange = function() {
+                        updateGraphToggle(categoryKey, varIndex, null, this.checked);
+                    };
+                    graphDiv.appendChild(graphCheckbox);
+                    varDiv.appendChild(graphDiv);
 
-                            // Data Inputs (Kolommen 2 tot N+1)
-                            weeks.forEach((week, i) => {
-                                const inputContainer = document.createElement('div');
-                                inputContainer.className = 'input-with-delta';
-                                
-                                const input = document.createElement('input');
-                                input.type = 'text';
-                                input.className = 'data-input';
-                                input.placeholder = '0';
-                                input.value = subVar.data[week] !== null ? subVar.data[week] : '';
+                    // Actie Knoppen (Laatste Kolom)
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'variable-actions action-cell';
+                    actionsDiv.innerHTML = `
+                        <button class="icon-btn btn-add" onclick="addSubVariable('${categoryKey}', ${varIndex})" title="Subvariabele toevoegen">+</button>
+                        <button class="icon-btn btn-delete" onclick="deleteVariable('${categoryKey}', ${varIndex})" title="Variabele verwijderen">×</button>
+                    `;
+                    varDiv.appendChild(actionsDiv);
+                    
+                    contentDiv.appendChild(varDiv);
+                    
 
-                                const deltaDiv = document.createElement('div');
+                    // 4. SUBVARIABLE RIJEN
+                    if (variable.subVariables && variable.subVariables.length > 0) {
+                        variable.subVariables.forEach((subVar, subIndex) => {
+                            // Zorg ervoor dat 'graph' bestaat op subvariabelen
+                            if (subVar.graph === undefined) subVar.graph = false;
+                            
+                            const subDiv = document.createElement('div');
+                            subDiv.className = 'variable-row sub-variable-row';
 
-                                if (i > 0) {
-                                    const previousWeek = weeks[i - 1];
-                                    const delta = calculateDelta(
-                                        subVar.data[week], 
-                                        subVar.data[previousWeek]
-                                    );
-                                    deltaDiv.className = `delta-indicator ${delta.className}`;
-                                    deltaDiv.innerHTML = delta.html;
-                                } else {
-                                    deltaDiv.className = 'delta-indicator delta-none';
-                                    deltaDiv.innerHTML = '';
-                                }
+                            // Naam Cell (Kolom 1)
+                            const subNameCell = document.createElement('span');
+                            subNameCell.className = 'name-cell sub-name-cell';
+                            subNameCell.setAttribute('contenteditable', 'true');
+                            
+                            // ======================================================
+                            // **OPLOSSING 2 HIER:** Verwijder witruimte van de sub-naam
+                            // ======================================================
+                            subNameCell.textContent = subVar.name.trim();
+                            subNameCell.onblur = function() { updateName(categoryKey, varIndex, subIndex, this.textContent); };
+                            subDiv.appendChild(subNameCell);
 
-                                input.onchange = function() {
-                                    const value = this.value === '' ? null : parseFloat(this.value);
-                                    jsonData[categoryKey].variables[varIndex].subVariables[subIndex].data[week] = value;
-                                    renderData();
-                                };
+                            // Data Inputs (Kolommen 2 tot N+1)
+                            weeks.forEach((week, i) => {
+                                const inputContainer = document.createElement('div');
+                                inputContainer.className = 'input-with-delta';
+                                
+                                const input = document.createElement('input');
+                                input.type = 'text';
+                                input.className = 'data-input';
+                                input.placeholder = '0';
+                                input.value = subVar.data[week] !== null ? subVar.data[week] : '';
 
-                                inputContainer.appendChild(input);
-                                inputContainer.appendChild(deltaDiv);
-                                subDiv.appendChild(inputContainer);
-                            });
+                                const deltaDiv = document.createElement('div');
 
-                            // NIEUW: Graph Cell voor subvariabelen
-                            const subGraphDiv = document.createElement('div');
-                            subGraphDiv.className = 'graph-cell';
-                            const subGraphCheckbox = document.createElement('input');
-                            subGraphCheckbox.type = 'checkbox';
-                            subGraphCheckbox.checked = subVar.graph || false;
-                            subGraphCheckbox.onchange = function() {
-                                updateGraphToggle(categoryKey, varIndex, subIndex, this.checked);
-                            };
-                            subGraphDiv.appendChild(subGraphCheckbox);
-                            subDiv.appendChild(subGraphDiv);
-                            
-                            // Actie Knoppen (Laatste Kolom)
-                            const subActionsDiv = document.createElement('div');
-                            subActionsDiv.className = 'variable-actions action-cell';
-                            subActionsDiv.innerHTML = `
-                                <button class="icon-btn btn-delete" onclick="deleteSubVariable('${categoryKey}', ${varIndex}, ${subIndex})" title="Subvariabele verwijderen">×</button>
-                            `;
-                            subDiv.appendChild(subActionsDiv);
+                                if (i > 0) {
+                                    const previousWeek = weeks[i - 1];
+                                    const delta = calculateDelta(
+                                        subVar.data[week], 
+                                        subVar.data[previousWeek]
+                                    );
+                                    deltaDiv.className = `delta-indicator ${delta.className}`;
+                                    deltaDiv.innerHTML = delta.html;
+                                } else {
+                                    deltaDiv.className = 'delta-indicator delta-none';
+                                    deltaDiv.innerHTML = '';
+                                }
 
-                            contentDiv.appendChild(subDiv);
-                        });
-                    }
-                    
-                    // 5. NOTITIEVELD
-                    const notesDiv = document.createElement('div');
-                    notesDiv.className = 'variable-notes';
-                    const notesInput = document.createElement('textarea');
-                    notesInput.className = 'notes-input';
-                    notesInput.placeholder = 'Voeg hier een notitie toe...';
-                    notesInput.value = variable.notes || '';
-                    notesInput.onchange = function() {
-                        jsonData[categoryKey].variables[varIndex].notes = this.value;
-                        renderData();
-                    };
-                    notesDiv.appendChild(notesInput);
-                    
-                    contentDiv.appendChild(notesDiv);
-                    
-                });
+                                input.onchange = function() {
+                                    const value = this.value === '' ? null : parseFloat(this.value);
+                                    jsonData[categoryKey].variables[varIndex].subVariables[subIndex].data[week] = value;
+                                    renderData();
+                                };
 
-                categoryDiv.appendChild(contentDiv);
-                document.getElementById('content').appendChild(categoryDiv);
-            });
-        }
+                                inputContainer.appendChild(input);
+                                inputContainer.appendChild(deltaDiv);
+                                subDiv.appendChild(inputContainer);
+                            });
 
-        function saveJSON() {
-            if (!jsonData) {
-                alert('Geen data om op te slaan');
-                return;
-            }
+                            // NIEUW: Graph Cell voor subvariabelen
+                            const subGraphDiv = document.createElement('div');
+                            subGraphDiv.className = 'graph-cell';
+                            const subGraphCheckbox = document.createElement('input');
+                            subGraphCheckbox.type = 'checkbox';
+                            subGraphCheckbox.checked = subVar.graph || false;
+                            subGraphCheckbox.onchange = function() {
+                                updateGraphToggle(categoryKey, varIndex, subIndex, this.checked);
+                            };
+                            subGraphDiv.appendChild(subGraphCheckbox);
+                            subDiv.appendChild(subGraphDiv);
+                            
+                            // Actie Knoppen (Laatste Kolom)
+                            const subActionsDiv = document.createElement('div');
+                            subActionsDiv.className = 'variable-actions action-cell';
+                            subActionsDiv.innerHTML = `
+                                <button class="icon-btn btn-delete" onclick="deleteSubVariable('${categoryKey}', ${varIndex}, ${subIndex})" title="Subvariabele verwijderen">×</button>
+                            `;
+                            subDiv.appendChild(subActionsDiv);
 
-            const dataStr = JSON.stringify(jsonData, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'updated_data.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
+                            contentDiv.appendChild(subDiv);
+                        });
+                    }
+                    
+                    // 5. NOTITIEVELD
+                    const notesDiv = document.createElement('div');
+                    notesDiv.className = 'variable-notes';
+                    const notesInput = document.createElement('textarea');
+                    notesInput.className = 'notes-input';
+                    notesInput.placeholder = 'Voeg hier een notitie toe...';
+                    notesInput.value = variable.notes || '';
+                    notesInput.onchange = function() {
+                        jsonData[categoryKey].variables[varIndex].notes = this.value;
+                        renderData();
+                    };
+                    notesDiv.appendChild(notesInput);
+                    
+                    contentDiv.appendChild(notesDiv);
+                    
+                });
 
-        function addVariable(categoryKey) {
-            if (!jsonData) return;
+                categoryDiv.appendChild(contentDiv);
+                document.getElementById('content').appendChild(categoryDiv);
+            });
+        }
 
-            const name = prompt('Naam van de nieuwe variabele:');
-            if (!name) return;
+        function saveJSON() {
+            if (!jsonData) {
+                alert('Geen data om op te slaan');
+                return;
+            }
 
-            const newVariable = {
-                name: name,
-                unit: "",
-                data: weeks.reduce((acc, weekName) => {
-                    acc[weekName] = null;
-                    return acc;
-                }, {}), 
-                subVariables: [],
-                notes: "",
-                graph: false // NIEUW: Standaardwaarde voor graph toggle
-            };
+            const dataStr = JSON.stringify(jsonData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'updated_data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
 
-            jsonData[categoryKey].variables.push(newVariable);
-            renderData(); 
-        }
+        function addVariable(categoryKey) {
+            if (!jsonData) return;
 
-        function deleteVariable(categoryKey, varIndex) {
-            if (!jsonData) return;
-            
-            const variable = jsonData[categoryKey].variables[varIndex];
-            if (confirm(`Weet je zeker dat je "${variable.name}" wilt verwijderen?`)) {
-                jsonData[categoryKey].variables.splice(varIndex, 1);
-                renderData(); 
-            }
-        }
+            const name = prompt('Naam van de nieuwe variabele:');
+            if (!name) return;
 
-        function addSubVariable(categoryKey, varIndex) {
-            if (!jsonData) return;
+            const newVariable = {
+                name: name,
+                unit: "",
+                data: weeks.reduce((acc, weekName) => {
+                    acc[weekName] = null;
+                    return acc;
+                }, {}), 
+                subVariables: [],
+                notes: "",
+                graph: false // NIEUW: Standaardwaarde voor graph toggle
+            };
 
-            const name = prompt('Naam van de nieuwe subvariabele:');
-            if (!name) return;
+            jsonData[categoryKey].variables.push(newVariable);
+            renderData(); 
+        }
 
-            const newSubVariable = {
-                data: weeks.reduce((acc, weekName) => {
-                    acc[weekName] = null;
-                    return acc;
-                }, {}),
-                name: name,
-                graph: false // NIEUW: Standaardwaarde voor graph toggle
-            };
+        function deleteVariable(categoryKey, varIndex) {
+            if (!jsonData) return;
+            
+            const variable = jsonData[categoryKey].variables[varIndex];
+            if (confirm(`Weet je zeker dat je "${variable.name.trim()}" wilt verwijderen?`)) {
+                jsonData[categoryKey].variables.splice(varIndex, 1);
+                renderData(); 
+            }
+        }
 
-            // Zorg ervoor dat subVariables bestaat
-            if (!jsonData[categoryKey].variables[varIndex].subVariables) {
-                jsonData[categoryKey].variables[varIndex].subVariables = [];
-            }
+        function addSubVariable(categoryKey, varIndex) {
+            if (!jsonData) return;
 
-            jsonData[categoryKey].variables[varIndex].subVariables.push(newSubVariable);
-            renderData(); 
-        }
+            const name = prompt('Naam van de nieuwe subvariabele:');
+            if (!name) return;
 
-        function deleteSubVariable(categoryKey, varIndex, subIndex) {
-            if (!jsonData) return;
-            
-            const subVar = jsonData[categoryKey].variables[varIndex].subVariables[subIndex];
-            if (confirm(`Weet je zeker dat je "${subVar.name}" wilt verwijderen?`)) {
-                jsonData[categoryKey].variables[varIndex].subVariables.splice(subIndex, 1);
-                renderData(); 
-            }
-        }
-    </script>
+            const newSubVariable = {
+                data: weeks.reduce((acc, weekName) => {
+                    acc[weekName] = null;
+                    return acc;
+                }, {}),
+                name: name,
+                graph: false // NIEUW: Standaardwaarde voor graph toggle
+            };
+
+            // Zorg ervoor dat subVariables bestaat
+            if (!jsonData[categoryKey].variables[varIndex].subVariables) {
+                jsonData[categoryKey].variables[varIndex].subVariables = [];
+            }
+
+            jsonData[categoryKey].variables[varIndex].subVariables.push(newSubVariable);
+            renderData(); 
+        }
+
+        function deleteSubVariable(categoryKey, varIndex, subIndex) {
+            if (!jsonData) return;
+            
+            const subVar = jsonData[categoryKey].variables[varIndex].subVariables[subIndex];
+            if (confirm(`Weet je zeker dat je "${subVar.name.trim()}" wilt verwijderen?`)) {
+                jsonData[categoryKey].variables[varIndex].subVariables.splice(subIndex, 1);
+                renderData(); 
+            }
+        }
+    </script>
 </body>
 </html>
+
